@@ -1,0 +1,44 @@
+# Auto detect text files and normalize line endings
+* text=auto eol=lf
+
+# Explicitly ensure Linux LF line endings for shell scripts and Gradle wrappers
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Windows batch scripts require CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Source Code
+*.kt text diff=kotlin
+*.kts text diff=kotlin
+*.java text diff=java
+*.cpp text diff=cpp
+*.c text diff=c
+*.h text diff=cpp
+*.hpp text diff=cpp
+
+# Build & Configuration
+*.gradle text
+*.properties text
+*.toml text
+*.json text
+*.xml text
+*.yml text
+*.yaml text
+*.md text
+.editorconfig text
+.gitignore text
+.gitattributes text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.jar binary
+*.so binary
+*.aar binary
+*.apk binary
+*.aab binary
+*.gguf binary

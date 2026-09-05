@@ -1,0 +1,66 @@
+# Built application files
+*.apk
+*.aar
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+/build
+/*/build
+
+# Gradle files
+.gradle/
+build/
+*/build/
+.gradle
+.kotlin
+
+# Android Studio / IntelliJ IDEA
+*.iml
+.idea/
+.idea
+/local.properties
+local.properties
+captures/
+/captures
+.externalNativeBuild
+.cxx
+
+# Secrets, Keystores, & Private Keys
+*.keystore
+!debug.keystore.base64
+*.jks
+*.p12
+*.pem
+*.key
+*.pfx
+.env
+.env.local
+.env.*.local
+
+# Large GGUF Models & Weight Binaries (User-provided on-device)
+*.gguf
+*.bin
+models/
+/models/
+
+# Native / NDK build artifacts
+*.so
+*.o
+*.a
+*.d
+
+# OS & Cache files
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+*~
