@@ -1,6 +1,20 @@
 package com.example.nexus.di
 
 import android.content.Context
+import com.example.nexus.core.cognitive.capability.LimitationRegistry
+import com.example.nexus.core.cognitive.capability.LiveCapabilityRegistry
+import com.example.nexus.core.cognitive.context.CognitiveContextManager
+import com.example.nexus.core.cognitive.explain.ExplainabilityEngine
+import com.example.nexus.core.cognitive.improvement.SelfImprovementEngine
+import com.example.nexus.core.cognitive.intent.IntentClassifier
+import com.example.nexus.core.cognitive.learning.LearningEngine
+import com.example.nexus.core.cognitive.memory.CognitiveMemoryEngine
+import com.example.nexus.core.cognitive.model.ModelBenchmarkLab
+import com.example.nexus.core.cognitive.plan.PlanFeasibilityValidator
+import com.example.nexus.core.cognitive.plan.PlanningEngine
+import com.example.nexus.core.cognitive.proactive.ProactiveEngine
+import com.example.nexus.core.cognitive.skill.SkillEngine
+import com.example.nexus.core.cognitive.skill.SkillTestRunner
 import com.example.nexus.core.kernel.AgentKernel
 import com.example.nexus.core.kernel.ContextBuilder
 import com.example.nexus.core.kernel.PromptEngine
@@ -31,8 +45,12 @@ import com.example.nexus.core.voice.OfflineSpeechInput
 import com.example.nexus.core.voice.SpeechInput
 import com.example.nexus.data.database.NexusDatabase
 import com.example.nexus.data.repository.AuditLogRepository
+import com.example.nexus.data.repository.KnowledgeGraphRepository
+import com.example.nexus.data.repository.LearningRepository
 import com.example.nexus.data.repository.MemoryRepository
 import com.example.nexus.data.repository.ModelRepository
+import com.example.nexus.data.repository.ProactiveRepository
+import com.example.nexus.data.repository.SkillRepository
 import com.example.nexus.data.repository.SystemMetricsRepository
 
 /**
@@ -59,6 +77,22 @@ class NexusAppContainer(val context: Context) {
 
     val systemMetricsRepository: SystemMetricsRepository by lazy {
         SystemMetricsRepository(context)
+    }
+
+    val skillRepository: SkillRepository by lazy {
+        SkillRepository(database.skillDao())
+    }
+
+    val learningRepository: LearningRepository by lazy {
+        LearningRepository(database.learningRecordDao())
+    }
+
+    val knowledgeGraphRepository: KnowledgeGraphRepository by lazy {
+        KnowledgeGraphRepository(database.knowledgeGraphDao())
+    }
+
+    val proactiveRepository: ProactiveRepository by lazy {
+        ProactiveRepository(database.proactiveSuggestionDao())
     }
 
     val modelEngine: LocalModelEngine by lazy {
@@ -114,6 +148,62 @@ class NexusAppContainer(val context: Context) {
         com.example.nexus.core.permission.CapabilityRegistry(context, permissionManager)
     }
 
+    val liveCapabilityRegistry: LiveCapabilityRegistry by lazy {
+        LiveCapabilityRegistry(context, permissionManager)
+    }
+
+    val limitationRegistry: LimitationRegistry by lazy {
+        LimitationRegistry()
+    }
+
+    val intentClassifier: IntentClassifier by lazy {
+        IntentClassifier()
+    }
+
+    val planFeasibilityValidator: PlanFeasibilityValidator by lazy {
+        PlanFeasibilityValidator(toolRegistry, permissionManager, liveCapabilityRegistry)
+    }
+
+    val planningEngine: PlanningEngine by lazy {
+        PlanningEngine(toolRegistry, planFeasibilityValidator)
+    }
+
+    val learningEngine: LearningEngine by lazy {
+        LearningEngine(learningRepository)
+    }
+
+    val cognitiveMemoryEngine: CognitiveMemoryEngine by lazy {
+        CognitiveMemoryEngine(memoryRepository, knowledgeGraphRepository)
+    }
+
+    val skillTestRunner: SkillTestRunner by lazy {
+        SkillTestRunner(toolRegistry)
+    }
+
+    val skillEngine: SkillEngine by lazy {
+        SkillEngine(skillRepository, skillTestRunner)
+    }
+
+    val cognitiveContextManager: CognitiveContextManager by lazy {
+        CognitiveContextManager(memoryRepository)
+    }
+
+    val selfImprovementEngine: SelfImprovementEngine by lazy {
+        SelfImprovementEngine(learningRepository, auditLogRepository)
+    }
+
+    val explainabilityEngine: ExplainabilityEngine by lazy {
+        ExplainabilityEngine()
+    }
+
+    val proactiveEngine: ProactiveEngine by lazy {
+        ProactiveEngine(proactiveRepository, memoryRepository, auditLogRepository)
+    }
+
+    val modelBenchmarkLab: ModelBenchmarkLab by lazy {
+        ModelBenchmarkLab(inferenceController)
+    }
+
     val cancellationController: com.example.nexus.core.kernel.CancellationController by lazy {
         com.example.nexus.core.kernel.CancellationController()
     }
@@ -136,7 +226,12 @@ class NexusAppContainer(val context: Context) {
             inferenceController = inferenceController,
             cancellationController = cancellationController,
             retryPolicy = retryPolicy,
-            maxSteps = 8
+            maxSteps = 8,
+            intentClassifier = intentClassifier,
+            planningEngine = planningEngine,
+            limitationRegistry = limitationRegistry,
+            learningEngine = learningEngine,
+            explainabilityEngine = explainabilityEngine
         )
     }
 }

@@ -11,20 +11,26 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MemoryDao {
-    @Query("SELECT * FROM memories ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM memories WHERE isSuperseded = 0 ORDER BY updatedAt DESC")
     fun getAllMemories(): Flow<List<MemoryEntity>>
 
-    @Query("SELECT * FROM memories WHERE category = :category ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM memories ORDER BY updatedAt DESC")
+    fun getAllMemoriesIncludingSuperseded(): Flow<List<MemoryEntity>>
+
+    @Query("SELECT * FROM memories WHERE category = :category AND isSuperseded = 0 ORDER BY updatedAt DESC")
     fun getMemoriesByCategory(category: String): Flow<List<MemoryEntity>>
 
-    @Query("SELECT * FROM memories WHERE content LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM memories WHERE content LIKE '%' || :query || '%' AND isSuperseded = 0 ORDER BY updatedAt DESC")
     fun searchMemories(query: String): Flow<List<MemoryEntity>>
 
-    @Query("SELECT * FROM memories WHERE content LIKE '%' || :query || '%' ORDER BY updatedAt DESC LIMIT :limit")
+    @Query("SELECT * FROM memories WHERE content LIKE '%' || :query || '%' AND isSuperseded = 0 ORDER BY updatedAt DESC LIMIT :limit")
     suspend fun searchMemoriesSync(query: String, limit: Int = 5): List<MemoryEntity>
 
-    @Query("SELECT * FROM memories ORDER BY updatedAt DESC LIMIT :limit")
+    @Query("SELECT * FROM memories WHERE isSuperseded = 0 ORDER BY updatedAt DESC LIMIT :limit")
     suspend fun getRecentMemoriesSync(limit: Int = 5): List<MemoryEntity>
+
+    @Query("SELECT * FROM memories WHERE isSuperseded = 0")
+    suspend fun getAllActiveMemoriesSync(): List<MemoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMemory(memory: MemoryEntity)
@@ -38,9 +44,18 @@ interface MemoryDao {
     @Query("DELETE FROM memories WHERE id = :id")
     suspend fun deleteMemoryById(id: String)
 
+    @Query("UPDATE memories SET isSuperseded = 1, supersededBy = :supersedingId, updatedAt = :timestamp WHERE id = :targetId")
+    suspend fun markSuperseded(targetId: String, supersedingId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE memories SET decayScore = :decayScore, lastAccessedAt = :lastAccessedAt WHERE id = :id")
+    suspend fun updateDecay(id: String, decayScore: Float, lastAccessedAt: Long)
+
+    @Query("DELETE FROM memories WHERE isSuperseded = 1 OR decayScore < :threshold")
+    suspend fun pruneStaleMemories(threshold: Float = 0.2f): Int
+
     @Query("DELETE FROM memories")
     suspend fun clearAll()
 
-    @Query("SELECT COUNT(*) FROM memories")
+    @Query("SELECT COUNT(*) FROM memories WHERE isSuperseded = 0")
     fun getMemoryCount(): Flow<Int>
 }

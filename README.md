@@ -155,6 +155,7 @@ NEXUS requires an on-device GGUF model file to perform local inference.
 ## Documentation Index
 
 - [Architecture Overview](docs/ARCHITECTURE.md)
+- [Cognitive Evolution Engine](docs/COGNITIVE_EVOLUTION.md)
 - [Building & Compilation](docs/BUILDING.md)
 - [Development Setup](docs/DEVELOPMENT.md)
 - [Security Policy & Threat Model](docs/SECURITY.md)

@@ -1,5 +1,13 @@
 package com.example.nexus.core.kernel
 
+import com.example.nexus.core.cognitive.capability.LimitationRegistry
+import com.example.nexus.core.cognitive.explain.DecisionExplanation
+import com.example.nexus.core.cognitive.explain.ExplainabilityEngine
+import com.example.nexus.core.cognitive.intent.IntentClassifier
+import com.example.nexus.core.cognitive.intent.IntentResult
+import com.example.nexus.core.cognitive.learning.LearningEngine
+import com.example.nexus.core.cognitive.plan.ExecutionPlan
+import com.example.nexus.core.cognitive.plan.PlanningEngine
 import com.example.nexus.core.error.ErrorSeverity
 import com.example.nexus.core.error.RetryPolicy
 import com.example.nexus.core.error.ToolError
@@ -56,7 +64,10 @@ data class ActiveTaskState(
     val executionLog: List<String> = emptyList(),
     val finalAnswer: String? = null,
     val receipts: List<ToolReceipt> = emptyList(),
-    val hallucinationReports: List<HallucinationReport> = emptyList()
+    val hallucinationReports: List<HallucinationReport> = emptyList(),
+    val intentResult: IntentResult? = null,
+    val executionPlan: ExecutionPlan? = null,
+    val latestExplanation: DecisionExplanation? = null
 )
 
 class AgentKernel(
@@ -68,7 +79,12 @@ class AgentKernel(
     private val inferenceController: InferenceController,
     val cancellationController: CancellationController = CancellationController(),
     val retryPolicy: RetryPolicy = RetryPolicy(maxRetries = 2),
-    private val maxSteps: Int = 8
+    private val maxSteps: Int = 8,
+    private val intentClassifier: IntentClassifier = IntentClassifier(),
+    private val planningEngine: PlanningEngine? = null,
+    private val limitationRegistry: LimitationRegistry = LimitationRegistry(),
+    private val learningEngine: LearningEngine? = null,
+    private val explainabilityEngine: ExplainabilityEngine = ExplainabilityEngine()
 ) {
     private val _taskState = MutableStateFlow(ActiveTaskState())
     val taskState: StateFlow<ActiveTaskState> = _taskState.asStateFlow()
@@ -91,6 +107,30 @@ class AgentKernel(
         val taskId = UUID.randomUUID().toString()
         cancellationController.reset()
 
+        // 1. Cognitive Intent Classification
+        val intentResult = intentClassifier.classify(command)
+
+        // 2. Limitation Boundary Check: Truth-first check before attempting impossible execution
+        val limitation = limitationRegistry.findLimitationForRequest(command)
+        if (limitation != null) {
+            val limitationAnswer = "I cannot fulfill this request: ${limitation.summary}. Reason: ${limitation.detailedReason}. Alternative: ${limitation.recommendedAlternative}"
+            updateState {
+                copy(
+                    taskId = taskId,
+                    goal = command,
+                    agentState = AgentState.COMPLETED,
+                    isExecuting = false,
+                    finalAnswer = limitationAnswer,
+                    intentResult = intentResult,
+                    executionLog = listOf("Limitation encountered: ${limitation.summary}")
+                )
+            }
+            return@withContext limitationAnswer
+        }
+
+        // 3. Cognitive Planning
+        val executionPlan = planningEngine?.generatePlan(intentResult)
+
         val taskReceipts = mutableListOf<ToolReceipt>()
 
         _taskState.value = ActiveTaskState(
@@ -98,7 +138,9 @@ class AgentKernel(
             goal = command,
             agentState = AgentState.PLANNING,
             isExecuting = true,
-            executionLog = listOf("Task initialized: '$command'")
+            executionLog = listOf("Task initialized: '$command' (Intent: ${intentResult.type.name})"),
+            intentResult = intentResult,
+            executionPlan = executionPlan
         )
 
         val context = contextBuilder.build(command, AgentState.PLANNING)
@@ -204,6 +246,14 @@ class AgentKernel(
                         _taskState.value.hallucinationReports
                     }
 
+                    val explanation = explainabilityEngine.buildExplanation(
+                        userCommand = command,
+                        intentResult = intentResult,
+                        planSteps = executionPlan?.steps,
+                        receipts = taskReceipts,
+                        finalOutcome = finalResponse
+                    )
+
                     updateState {
                         copy(
                             agentState = AgentState.COMPLETED,
@@ -211,6 +261,7 @@ class AgentKernel(
                             finalAnswer = finalResponse,
                             receipts = taskReceipts.toList(),
                             hallucinationReports = reports,
+                            latestExplanation = explanation,
                             executionLog = executionLog + (
                                 if (validationOutcome.hallucinationReport != null) {
                                     "[SECURITY] Hallucination detected & corrected: ${validationOutcome.hallucinationReport.mismatchCategory}"
@@ -356,6 +407,7 @@ class AgentKernel(
                                 command = command
                             )
                             taskReceipts.add(receipt)
+                            learningEngine?.processReceipt(receipt)
                             conversation.add(
                                 ChatMessage(
                                     role = ChatRole.TOOL,
@@ -374,6 +426,7 @@ class AgentKernel(
                                 command = command
                             )
                             taskReceipts.add(receipt)
+                            learningEngine?.processReceipt(receipt)
                             conversation.add(
                                 ChatMessage(
                                     role = ChatRole.TOOL,

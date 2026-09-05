@@ -39,13 +39,13 @@ class Phase4ReleaseEngineeringUnitTest {
 
     @Test
     fun testFileSandboxSecurityIsolation() {
-        val sandboxFile = FileSandboxHelper.resolveFile(context, "release_notes.txt")
+        val sandboxFile = FileSandboxHelper.resolveSafeFile(context, "release_notes.txt")
         assertTrue(sandboxFile.path.contains("sandbox"))
 
         // Verify traversal attempt throws SecurityException
         var traversalBlocked = false
         try {
-            FileSandboxHelper.resolveFile(context, "../../etc/passwd")
+            FileSandboxHelper.resolveSafeFile(context, "../../etc/passwd")
         } catch (e: SecurityException) {
             traversalBlocked = true
         }
@@ -57,8 +57,13 @@ class Phase4ReleaseEngineeringUnitTest {
         val tempFile = File(context.cacheDir, "fake_corrupt_model.gguf")
         tempFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02, 0x03))
 
-        val result = GgufMetadataParser.parse(tempFile)
-        assertFalse("Corrupt GGUF magic must not be marked valid", result.isValid)
+        var rejected = false
+        try {
+            GgufMetadataParser.parse(tempFile)
+        } catch (e: Exception) {
+            rejected = true
+        }
+        assertTrue("Corrupt GGUF magic must throw exception", rejected)
         tempFile.delete()
     }
 
@@ -73,12 +78,14 @@ class Phase4ReleaseEngineeringUnitTest {
 
     @Test
     fun testToolReceiptNonRepudiationProperties() {
-        val receipt = ToolReceipt.success(
+        val receipt = ToolReceipt(
             toolId = "release_test_tool",
-            stdout = "All release verification tests passed successfully"
+            status = com.example.nexus.core.receipt.ToolStatus.SUCCESS,
+            riskLevel = RiskLevel.LOW,
+            outputSummary = "All release verification tests passed successfully"
         )
-        assertTrue(receipt.isSuccess)
+        assertEquals(com.example.nexus.core.receipt.ToolStatus.SUCCESS, receipt.status)
         assertEquals("release_test_tool", receipt.toolId)
-        assertNotNull(receipt.executionDurationMs)
+        assertTrue(receipt.timestamp > 0)
     }
 }

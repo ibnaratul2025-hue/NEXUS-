@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class MemoryRepository(private val memoryDao: MemoryDao) {
     val allMemories: Flow<List<MemoryEntity>> = memoryDao.getAllMemories()
+    val allMemoriesIncludingSuperseded: Flow<List<MemoryEntity>> = memoryDao.getAllMemoriesIncludingSuperseded()
     val memoryCount: Flow<Int> = memoryDao.getMemoryCount()
 
     fun getByCategory(category: String): Flow<List<MemoryEntity>> =
@@ -20,6 +21,9 @@ class MemoryRepository(private val memoryDao: MemoryDao) {
     suspend fun getRecentSync(limit: Int = 5): List<MemoryEntity> =
         memoryDao.getRecentMemoriesSync(limit)
 
+    suspend fun getAllActiveMemoriesSync(): List<MemoryEntity> =
+        memoryDao.getAllActiveMemoriesSync()
+
     suspend fun saveMemory(memory: MemoryEntity) =
         memoryDao.insertMemory(memory)
 
@@ -28,6 +32,15 @@ class MemoryRepository(private val memoryDao: MemoryDao) {
 
     suspend fun deleteMemoryById(id: String) =
         memoryDao.deleteMemoryById(id)
+
+    suspend fun markSuperseded(targetId: String, supersedingId: String) =
+        memoryDao.markSuperseded(targetId, supersedingId)
+
+    suspend fun updateDecay(id: String, decayScore: Float, lastAccessedAt: Long) =
+        memoryDao.updateDecay(id, decayScore, lastAccessedAt)
+
+    suspend fun pruneStaleMemories(threshold: Float = 0.2f): Int =
+        memoryDao.pruneStaleMemories(threshold)
 
     suspend fun clearAll() =
         memoryDao.clearAll()

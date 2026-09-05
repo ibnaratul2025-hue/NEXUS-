@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.nexus.di.NexusAppContainer
 import com.example.nexus.ui.navigation.NexusNavRoute
 import com.example.nexus.ui.screens.AgentScreen
+import com.example.nexus.ui.screens.CognitiveDashboardScreen
 import com.example.nexus.ui.screens.DashboardScreen
 import com.example.nexus.ui.screens.MemoryScreen
 import com.example.nexus.ui.screens.ModelManagerScreen
@@ -122,6 +123,9 @@ fun NexusApp(
         ) {
             composable(NexusNavRoute.Dashboard.route) {
                 DashboardScreen(viewModel = dashboardViewModel)
+            }
+            composable(NexusNavRoute.Cognitive.route) {
+                CognitiveDashboardScreen(container = container)
             }
             composable(NexusNavRoute.Models.route) {
                 ModelManagerScreen(viewModel = modelManagerViewModel)
