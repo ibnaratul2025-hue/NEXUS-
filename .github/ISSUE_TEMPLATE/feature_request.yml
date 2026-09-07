@@ -1,12 +1,27 @@
 name: Feature Request
-description: Propose a new capability, tool, or improvement for NEXUS
+description: Propose a new capability, tool, adapter, or improvement for NEXUS
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        We appreciate community ideas! Please describe the proposed functionality and how it adheres to our local-first, safe-by-default architecture.
+        We appreciate community ideas! Please describe the proposed functionality and how it adheres to our local-first, safe-by-default, and non-hallucinating architecture.
+
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Target Subsystem
+      options:
+        - "Universal Action Fabric (New tool, action, or system interaction)"
+        - "Sandboxed App Adapter (YouTube, GitHub, or custom app adapter)"
+        - "Digital World Model (Entities, relationships, or contextual signals)"
+        - "JARVIS Operating Layer (Presence, working memory, or missions)"
+        - "Cognitive Evolution (Skills, dynamic planning, or learning loop)"
+        - "Inference Engine (GGUF, JNI bridge, or quantization formats)"
+        - "UI / User Experience (Compose screens, HUD, or theme)"
+    validations:
+      required: true
 
   - type: textarea
     id: problem
@@ -20,7 +35,7 @@ body:
     id: solution
     attributes:
       label: Describe the Solution You'd Like
-      description: Detailed explanation of the requested feature or tool integration.
+      description: Detailed explanation of the requested feature or capability.
     validations:
       required: true
 

@@ -94,24 +94,56 @@ When the model produces text after a tool step, `AntiHallucinationValidator` ins
 - The validator replaces the hallucinated claim with a factual correction derived from the `ToolReceipt`.
 - Mismatches are categorized (`FILE_CREATION_CONTRADICTION`, `PERMISSION_GRANT_CONTRADICTION`, etc.) and logged to the audit trail.
 
+### 2.6 Cognitive Evolution Engine
+(See [COGNITIVE_EVOLUTION.md](COGNITIVE_EVOLUTION.md) for full details)
+- **`PlanningEngine`**: Decomposes complex intents into structured `ExecutionPlan` steps with dependency graphs.
+- **`PlanFeasibilityValidator`**: Pre-flight verification of required capabilities, permissions, and arguments before model execution.
+- **`CognitiveMemoryEngine`**: Time-decaying memory weights, source trust labels, and semantic knowledge graph.
+- **`SkillEngine`**: Dynamically writes, tests in an isolated sandbox, and deploys reusable Kotlin skill automations.
+- **`ModelBenchmarkLab`**: Measures generation latency, tokens per second, and RAM consumption on device.
+
+### 2.7 JARVIS Proactive Personal Operating Layer
+(See [JARVIS_OPERATING_LAYER.md](JARVIS_OPERATING_LAYER.md) for full details)
+- **`PresenceEngine`**: Ambient background awareness monitoring device state, battery thresholds, and focus blocks.
+- **`WorkingMemory`**: Ephemeral in-memory scratchpad for recent tool executions, active tasks, and TTL-decaying observations.
+- **`UniversalUndoManager`**: Reversible action ledger allowing single-tap rollbacks of persistent file and setting modifications.
+- **`AttentionManager`**: Heuristic interruptibility gating (`AVAILABLE`, `FOCUSED`, `BUSY`, `SLEEPING`).
+- **`MissionEngine`**: Multi-step autonomous goals running in the background with checkpointing and state recovery.
+
+### 2.8 Digital World Model & Universal Action Fabric
+(See [WORLD_MODEL_ACTION_FABRIC.md](WORLD_MODEL_ACTION_FABRIC.md) for full details)
+- **`WorldModelEngine`**: Live 15-domain entity graph with typed relationships (`USES`, `OWNS`, `DEPENDS_ON`, `RUNNING`, `AVAILABLE`, etc.).
+- **Epistemic Separation**: Strict runtime isolation between `FACT`, `OBSERVATION`, `PREDICTION`, and `ASSUMPTION`.
+- **`ActionFabric`**: Unified action abstraction with argument schemas, risk gating, and post-execution verification.
+- **`CapabilityNegotiator`**: 6-stage pre-execution gating with non-hallucinating explanations of hardware and software limitations.
+- **`AppAdapterSDK` & `AppCapabilityRegistry`**: Sandboxed third-party application adapters (YouTube, GitHub, Files) requiring explicit user authorization.
+- **`AccessibilityController`**: Semantic view tree traversal with a dedicated physical-style Emergency Stop kill switch.
+- **`WorkflowCompiler`**: Compiles natural language instructions into deterministic 5-stage automata.
+
 ---
 
 ## 3. Data Persistence Layer (Room Database)
 
 - **Database**: `NexusDatabase` (Room SQLite)
 - **Entities**:
-  - `MemoryEntity`: Long-term key-value semantic facts.
-  - `ToolAuditEntity`: Historical ledger of every tool invocation, arguments, execution duration, and `ToolReceipt`.
+  - `MemoryEntity`: Long-term key-value semantic facts with category tagging.
+  - `ToolAuditEntity`: Historical ledger of tool invocations, arguments, durations, and `ToolReceipt` outcomes.
   - `ModelMetadataEntity`: Catalog of imported GGUF models, quantization formats, and context configurations.
-- **DAOs**:
-  - `MemoryDao`, `AuditDao`, `ModelDao` provide clean coroutine-based Flow queries.
+  - `SkillEntity`: Synthesized procedural skills with verification test suites.
+  - `KnowledgeEntity` & `KnowledgeRelationEntity`: Knowledge graph representation of user, device, and project facts.
+  - `MissionEntity` & `MissionStepEntity`: Checkpointed states and steps for autonomous background missions.
+  - `ActionHistoryEntity`: Reversible action audit trail used by `UniversalUndoManager`.
+  - `SessionContextEntity`: Preserved cross-app session state.
 
 ---
 
 ## 4. UI Layer Architecture
 
 Built with 100% Jetpack Compose following Material Design 3 guidelines:
+- **`JarvisPresenceScreen`**: Ambient control center featuring the pulsing voice visualization orb, ambient timeline, and mission deck.
+- **`DecisionCenterScreen`**: Sci-fi inspired inspection panel visualizing what NEXUS knows, what it can do, what it is preparing, and self-awareness queries.
 - **`AgentScreen`**: Interactive terminal displaying live token generation, user input, confirmation prompts, and anti-hallucination alerts.
-- **`ToolsScreen`**: Live capability matrix showing installed tools, permission statuses, and sandbox health.
-- **`AuditScreen`**: Transparent timeline of executed actions, tool arguments, and cryptographic receipts.
-- **`SettingsScreen`**: On-device model controls, generation parameters (temperature, top_p, max_tokens), and About metadata.
+- **`CognitiveDashboardScreen`**: Visual inspection of the knowledge graph, active execution plans, and synthesized skills.
+- **`ModelManagerScreen`**: Sideloaded GGUF model manager, benchmark profiling lab, and hardware tier diagnostics.
+- **`MemoryScreen`**: Semantic memory browser and knowledge vault.
+- **`SettingsScreen`**: On-device model controls, generation parameters, attention mode switches, and security controls.

@@ -52,6 +52,29 @@ import com.example.nexus.data.repository.ModelRepository
 import com.example.nexus.data.repository.ProactiveRepository
 import com.example.nexus.data.repository.SkillRepository
 import com.example.nexus.data.repository.SystemMetricsRepository
+import com.example.nexus.data.repository.MissionRepository
+import com.example.nexus.data.repository.PredictionRepository
+import com.example.nexus.data.repository.PersonalModelRepository
+import com.example.nexus.data.repository.ActionHistoryRepository
+import com.example.nexus.core.presence.PersonalContextEngine
+import com.example.nexus.core.presence.WorkingMemory
+import com.example.nexus.core.presence.AttentionManager
+import com.example.nexus.core.presence.JarvisMomentsGenerator
+import com.example.nexus.core.presence.PredictionEngine
+import com.example.nexus.core.presence.TaskPreparationEngine
+import com.example.nexus.core.presence.UniversalUndoManager
+import com.example.nexus.core.presence.ResourceOrchestrator
+import com.example.nexus.core.presence.SelfDiagnosticEngine
+import com.example.nexus.core.presence.TimeAwareIntelligence
+import com.example.nexus.core.presence.EmotionalToneAdapter
+import com.example.nexus.core.presence.MultiAgentInternalCoordinator
+import com.example.nexus.core.presence.MissionEngine
+import com.example.nexus.core.presence.PersonalModel
+import com.example.nexus.core.presence.SecondBrainEngine
+import com.example.nexus.core.presence.EvolutionEngine
+import com.example.nexus.core.presence.WhatShouldIDoEngine
+import com.example.nexus.core.presence.JarvisCommandEngine
+import com.example.nexus.core.presence.JarvisVoiceController
 
 /**
  * Dependency container for NEXUS subsystems.
@@ -232,6 +255,207 @@ class NexusAppContainer(val context: Context) {
             limitationRegistry = limitationRegistry,
             learningEngine = learningEngine,
             explainabilityEngine = explainabilityEngine
+        )
+    }
+
+    // --- Autonomous Presence & JARVIS Capabilities ---
+
+    val missionRepository: MissionRepository by lazy {
+        MissionRepository(database.missionDao())
+    }
+
+    val predictionRepository: PredictionRepository by lazy {
+        PredictionRepository(database.predictionDao())
+    }
+
+    val personalModelRepository: PersonalModelRepository by lazy {
+        PersonalModelRepository(database.personalModelDao())
+    }
+
+    val actionHistoryRepository: ActionHistoryRepository by lazy {
+        ActionHistoryRepository(database.actionHistoryDao())
+    }
+
+    val personalContextEngine: PersonalContextEngine by lazy {
+        PersonalContextEngine(context, permissionManager)
+    }
+
+    val workingMemory: WorkingMemory by lazy {
+        WorkingMemory()
+    }
+
+    val attentionManager: AttentionManager by lazy {
+        AttentionManager()
+    }
+
+    val jarvisMomentsGenerator: JarvisMomentsGenerator by lazy {
+        JarvisMomentsGenerator()
+    }
+
+    val predictionEngine: PredictionEngine by lazy {
+        PredictionEngine(predictionRepository)
+    }
+
+    val taskPreparationEngine: TaskPreparationEngine by lazy {
+        TaskPreparationEngine(toolRegistry, planFeasibilityValidator)
+    }
+
+    val universalUndoManager: UniversalUndoManager by lazy {
+        UniversalUndoManager(actionHistoryRepository)
+    }
+
+    val resourceOrchestrator: ResourceOrchestrator by lazy {
+        ResourceOrchestrator()
+    }
+
+    val selfDiagnosticEngine: SelfDiagnosticEngine by lazy {
+        SelfDiagnosticEngine(toolRegistry)
+    }
+
+    val timeAwareIntelligence: TimeAwareIntelligence by lazy {
+        TimeAwareIntelligence()
+    }
+
+    val emotionalToneAdapter: EmotionalToneAdapter by lazy {
+        EmotionalToneAdapter()
+    }
+
+    val multiAgentCoordinator: MultiAgentInternalCoordinator by lazy {
+        MultiAgentInternalCoordinator(policyEngine, toolRegistry)
+    }
+
+    val missionEngine: MissionEngine by lazy {
+        MissionEngine(missionRepository)
+    }
+
+    val personalModel: PersonalModel by lazy {
+        PersonalModel(personalModelRepository)
+    }
+
+    val secondBrainEngine: SecondBrainEngine by lazy {
+        SecondBrainEngine(memoryRepository, personalModelRepository, skillRepository, knowledgeGraphRepository)
+    }
+
+    val evolutionEngine: EvolutionEngine by lazy {
+        EvolutionEngine(skillEngine)
+    }
+
+    val whatShouldIDoEngine: WhatShouldIDoEngine by lazy {
+        WhatShouldIDoEngine(personalModelRepository, timeAwareIntelligence)
+    }
+
+    val jarvisCommandEngine: JarvisCommandEngine by lazy {
+        JarvisCommandEngine(workingMemory, universalUndoManager, missionEngine, policyEngine)
+    }
+
+    val jarvisVoiceController: JarvisVoiceController by lazy {
+        JarvisVoiceController(context)
+    }
+
+    // --- PHASE 7: DIGITAL WORLD MODEL & UNIVERSAL ACTION FABRIC ---
+    val localEventBus: com.example.nexus.core.world.LocalEventBus by lazy {
+        com.example.nexus.core.world.LocalEventBus()
+    }
+
+    val worldModelEngine: com.example.nexus.core.world.WorldModelEngine by lazy {
+        com.example.nexus.core.world.WorldModelEngine()
+    }
+
+    val actionFabric: com.example.nexus.core.world.ActionFabric by lazy {
+        com.example.nexus.core.world.ActionFabric(
+            context = context,
+            policyEngine = policyEngine,
+            undoManager = universalUndoManager,
+            localEventBus = localEventBus,
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val capabilityNegotiator: com.example.nexus.core.world.CapabilityNegotiator by lazy {
+        com.example.nexus.core.world.CapabilityNegotiator(
+            context = context,
+            actionFabric = actionFabric,
+            policyEngine = policyEngine
+        )
+    }
+
+    val appCapabilityRegistry: com.example.nexus.core.world.AppCapabilityRegistry by lazy {
+        com.example.nexus.core.world.AppCapabilityRegistry(
+            context = context,
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val appAdapterManager: com.example.nexus.core.world.AppAdapterManager by lazy {
+        com.example.nexus.core.world.AppAdapterManager(
+            context = context,
+            actionFabric = actionFabric,
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val accessibilityController: com.example.nexus.core.world.AccessibilityController by lazy {
+        com.example.nexus.core.world.AccessibilityController(
+            context = context,
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val screenContextEngine: com.example.nexus.core.world.ScreenContextEngine by lazy {
+        com.example.nexus.core.world.ScreenContextEngine(
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val notificationIntelligence: com.example.nexus.core.world.NotificationIntelligence by lazy {
+        com.example.nexus.core.world.NotificationIntelligence(
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val ambientPresenceEngine: com.example.nexus.core.world.AmbientPresenceEngine by lazy {
+        com.example.nexus.core.world.AmbientPresenceEngine(
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val deviceCapabilityRegistry: com.example.nexus.core.world.DeviceCapabilityRegistry by lazy {
+        com.example.nexus.core.world.DeviceCapabilityRegistry(
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val workflowCompiler: com.example.nexus.core.world.WorkflowCompiler by lazy {
+        com.example.nexus.core.world.WorkflowCompiler(
+            worldModelEngine = worldModelEngine
+        )
+    }
+
+    val missionAutopilot: com.example.nexus.core.world.MissionAutopilot by lazy {
+        com.example.nexus.core.world.MissionAutopilot(
+            missionEngine = missionEngine,
+            actionFabric = actionFabric,
+            capabilityNegotiator = capabilityNegotiator,
+            localEventBus = localEventBus
+        )
+    }
+
+    val seeUnderstandActPipeline: com.example.nexus.core.world.SeeUnderstandActPipeline by lazy {
+        com.example.nexus.core.world.SeeUnderstandActPipeline(
+            worldModelEngine = worldModelEngine,
+            actionFabric = actionFabric,
+            capabilityNegotiator = capabilityNegotiator,
+            policyEngine = policyEngine,
+            localEventBus = localEventBus
+        )
+    }
+
+    val selfAwarenessEngine: com.example.nexus.core.world.SelfAwarenessEngine by lazy {
+        com.example.nexus.core.world.SelfAwarenessEngine(
+            context = context,
+            actionFabric = actionFabric,
+            appCapabilityRegistry = appCapabilityRegistry,
+            workingMemory = workingMemory
         )
     }
 }

@@ -6,20 +6,28 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.nexus.data.database.dao.ActionHistoryDao
 import com.example.nexus.data.database.dao.AuditLogDao
 import com.example.nexus.data.database.dao.KnowledgeGraphDao
 import com.example.nexus.data.database.dao.LearningRecordDao
 import com.example.nexus.data.database.dao.MemoryDao
+import com.example.nexus.data.database.dao.MissionDao
 import com.example.nexus.data.database.dao.ModelDao
+import com.example.nexus.data.database.dao.PersonalModelDao
+import com.example.nexus.data.database.dao.PredictionDao
 import com.example.nexus.data.database.dao.ProactiveSuggestionDao
 import com.example.nexus.data.database.dao.SkillDao
 import com.example.nexus.data.database.dao.WorkflowDao
+import com.example.nexus.data.database.entity.ActionHistoryEntity
 import com.example.nexus.data.database.entity.AuditLogEntity
 import com.example.nexus.data.database.entity.KnowledgeEdgeEntity
 import com.example.nexus.data.database.entity.KnowledgeNodeEntity
 import com.example.nexus.data.database.entity.LearningRecordEntity
 import com.example.nexus.data.database.entity.MemoryEntity
+import com.example.nexus.data.database.entity.MissionEntity
 import com.example.nexus.data.database.entity.ModelEntity
+import com.example.nexus.data.database.entity.PersonalModelEntity
+import com.example.nexus.data.database.entity.PredictionEntity
 import com.example.nexus.data.database.entity.ProactiveSuggestionEntity
 import com.example.nexus.data.database.entity.SkillEntity
 import com.example.nexus.data.database.entity.WorkflowEntity
@@ -34,9 +42,13 @@ import com.example.nexus.data.database.entity.WorkflowEntity
         LearningRecordEntity::class,
         KnowledgeNodeEntity::class,
         KnowledgeEdgeEntity::class,
-        ProactiveSuggestionEntity::class
+        ProactiveSuggestionEntity::class,
+        MissionEntity::class,
+        PredictionEntity::class,
+        PersonalModelEntity::class,
+        ActionHistoryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class NexusDatabase : RoomDatabase() {
@@ -48,6 +60,10 @@ abstract class NexusDatabase : RoomDatabase() {
     abstract fun learningRecordDao(): LearningRecordDao
     abstract fun knowledgeGraphDao(): KnowledgeGraphDao
     abstract fun proactiveSuggestionDao(): ProactiveSuggestionDao
+    abstract fun missionDao(): MissionDao
+    abstract fun predictionDao(): PredictionDao
+    abstract fun personalModelDao(): PersonalModelDao
+    abstract fun actionHistoryDao(): ActionHistoryDao
 
     companion object {
         @Volatile
@@ -139,6 +155,74 @@ abstract class NexusDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create missions table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS missions (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        title TEXT NOT NULL,
+                        goal TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        progress REAL NOT NULL,
+                        currentStep INTEGER NOT NULL,
+                        totalSteps INTEGER NOT NULL,
+                        planJson TEXT NOT NULL,
+                        checkpointsJson TEXT NOT NULL,
+                        failuresJson TEXT NOT NULL,
+                        recoveryStrategy TEXT,
+                        finalVerification INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """.trimIndent())
+
+                // Create predictions table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS predictions (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        prediction TEXT NOT NULL,
+                        confidence REAL NOT NULL,
+                        evidence TEXT NOT NULL,
+                        expiration INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                """.trimIndent())
+
+                // Create personal_model table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS personal_model (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        category TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        detailsJson TEXT NOT NULL,
+                        priority INTEGER NOT NULL,
+                        isActive INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """.trimIndent())
+
+                // Create action_history table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS action_history (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        actionName TEXT NOT NULL,
+                        target TEXT NOT NULL,
+                        parametersJson TEXT NOT NULL,
+                        snapshotJson TEXT,
+                        inverseCommandJson TEXT,
+                        isReversible INTEGER NOT NULL,
+                        executedAt INTEGER NOT NULL,
+                        undoneAt INTEGER,
+                        description TEXT NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): NexusDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -146,7 +230,7 @@ abstract class NexusDatabase : RoomDatabase() {
                     NexusDatabase::class.java,
                     "nexus_local.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

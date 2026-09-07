@@ -7,17 +7,21 @@ Briefly describe the change, its motivation, and the problem it solves.
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Security fix / anti-hallucination enhancement
 - [ ] Documentation update
+- [ ] World Model / Action Fabric enhancement
+- [ ] JARVIS Operating Layer enhancement
 - [ ] CI/CD or build system enhancement
 
 ## Architectural Compliance
-- [ ] Receipt Authority: Model is NOT the source of truth for execution states.
-- [ ] Risk Classification: New tools explicitly declare an accurate `RiskLevel`.
-- [ ] Path Sandboxing: File access is strictly contained via `FileSandboxHelper`.
-- [ ] No Hardcoded Secrets: No API keys, tokens, or keystores included.
+- [ ] **Receipt Authority**: Model is NOT the source of truth for execution states.
+- [ ] **Epistemic Invariant**: Predictions/assumptions are never treated as facts without verified ToolReceipts.
+- [ ] **Risk Classification**: New actions/tools explicitly declare an accurate `RiskLevel` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+- [ ] **Hard Security Boundary**: No bypass of permission policies, security policies, confirmation dialogs, sandboxes, or the Emergency Stop kill switch.
+- [ ] **Path Sandboxing**: File access is strictly contained via `FileSandboxHelper`.
+- [ ] **No Hardcoded Secrets**: No API keys, tokens, or keystores included.
 
 ## Testing Performed
-- [ ] Local JVM unit tests executed (`./gradlew test`)
-- [ ] Android Lint checks passed (`./gradlew lint`)
+- [ ] Local JVM unit tests executed (`gradle :app:testDebugUnitTest`)
+- [ ] Android Lint checks passed (`gradle :app:lintDebug`)
 - [ ] Verified on real device or Android emulator (if UI/JNI changes made)
 
 ## Checklist

@@ -29,6 +29,7 @@ import com.example.nexus.ui.navigation.NexusNavRoute
 import com.example.nexus.ui.screens.AgentScreen
 import com.example.nexus.ui.screens.CognitiveDashboardScreen
 import com.example.nexus.ui.screens.DashboardScreen
+import com.example.nexus.ui.screens.JarvisPresenceScreen
 import com.example.nexus.ui.screens.MemoryScreen
 import com.example.nexus.ui.screens.ModelManagerScreen
 import com.example.nexus.ui.screens.SettingsScreen
@@ -123,6 +124,12 @@ fun NexusApp(
         ) {
             composable(NexusNavRoute.Dashboard.route) {
                 DashboardScreen(viewModel = dashboardViewModel)
+            }
+            composable(NexusNavRoute.DecisionCenter.route) {
+                com.example.nexus.ui.screens.DecisionCenterScreen(container = container)
+            }
+            composable(NexusNavRoute.Jarvis.route) {
+                JarvisPresenceScreen(container = container)
             }
             composable(NexusNavRoute.Cognitive.route) {
                 CognitiveDashboardScreen(container = container)
