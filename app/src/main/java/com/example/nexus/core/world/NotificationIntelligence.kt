@@ -71,7 +71,7 @@ class NotificationIntelligence(
 
         synchronized(notificationsList) {
             notificationsList.add(0, item)
-            if (notificationsList.size > 50) notificationsList.removeLast()
+            if (notificationsList.size > 50) notificationsList.removeAt(notificationsList.lastIndex)
             _notifications.value = notificationsList.toList()
         }
 

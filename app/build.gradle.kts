@@ -93,7 +93,16 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+    }
+  }
+  lint {
+    abortOnError = true
+    checkReleaseBuilds = false
+    disable.addAll(listOf("DefaultLocale", "InlinedApi"))
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true

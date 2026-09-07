@@ -36,9 +36,9 @@ class PersonalContextEngine(
 
     fun recordActivity(activity: String) {
         if (recentActivities.size >= 10) {
-            recentActivities.removeFirst()
+            recentActivities.removeAt(0)
         }
-        recentActivities.addLast(activity)
+        recentActivities.add(activity)
     }
 
     fun captureSnapshot(): ContextSnapshot {
