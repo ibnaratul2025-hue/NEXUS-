@@ -9,6 +9,9 @@ on:
     - cron: '0 6 * * 1' # Every Monday at 06:00 UTC
   workflow_dispatch:
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -27,7 +30,7 @@ jobs:
       matrix:
         include:
           - language: java-kotlin
-            build-mode: autobuild
+            build-mode: manual
           - language: c-cpp
             build-mode: manual
 
@@ -55,13 +58,20 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: +security-extended,security-and-quality
+
+      - name: Manual Build for Java/Kotlin
+        if: matrix.language == 'java-kotlin'
+        run: |
+          chmod +x gradlew || true
+          ./gradlew compileDebugKotlin compileDebugJavaWithJavac --no-daemon --stacktrace
 
       - name: Manual Build for C/C++
         if: matrix.language == 'c-cpp'
         run: |
           chmod +x gradlew || true
-          ./gradlew assembleDebug -PincludeNative=true --stacktrace
+          ./gradlew assembleDebug -PincludeNative=true --no-daemon --stacktrace
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
